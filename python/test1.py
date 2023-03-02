@@ -24,7 +24,7 @@ PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 def build(spinner: Spinner, dirty: bool = False) -> None:
   env = os.environ.copy()
   env['SCONS_FINISHED'] = "1"
-  nproc = os.cpu_count()
+  nproc = os.cpu_count() / 2
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
   scons: subprocess.Popen = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
@@ -52,7 +52,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
 
   if scons.returncode != 0:
     # Read remaining output
-    r = scons.stderr.read().split(b'\n')
+    r = scons.stderr.read().split(b'\n\n')
     compile_output += r
 
     # Build failed log errors
@@ -66,7 +66,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
     spinner.close()
     if not os.getenv("CI"):
       error_s = "\n\n".join("\n".join(textwrap.wrap(e, 65)) for e in errors)
-      with TextWindow("openpilot failed to build\n\n" + error_s) as t:
+      with TextWindow("Openpilot failed to build\n\n" + error_s) as t:
         t.wait_for_exit()
     exit(1)
 
