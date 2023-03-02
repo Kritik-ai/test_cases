@@ -5,6 +5,7 @@ import textwrap
 from pathlib import Path
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
+from common.params import Params
 from common.basedir import BASEDIR
 from common.spinner import Spinner
 from common.text_window import TextWindow
@@ -16,13 +17,13 @@ MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
 TOTAL_SCONS_NODES = 2460
-MAX_BUILD_PROGRESS = 100
+MAX_BUILD = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
 def build(spinner: Spinner, dirty: bool = False) -> None:
   env = os.environ.copy()
-  env['SCONS_PROGRESS'] = "1"
+  env['SCONS_FINISHED'] = "1"
   nproc = os.cpu_count()
   j_flag = "" if nproc is None else f"-j{nproc - 1}"
 
@@ -32,7 +33,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   compile_output = []
 
   # Read progress from stderr and update spinner
-  while scons.poll() is None:
+  while True:
     try:
       line = scons.stderr.readline()
       if line is None:
@@ -42,7 +43,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
       prefix = b'progress: '
       if line.startswith(prefix):
         i = int(line[len(prefix):])
-        spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
+        spinner.update_progress(MAX_BUILD * min(1., i / TOTAL_SCONS_NODES), 100.)
       elif len(line):
         compile_output.append(line)
         print(line.decode('utf8', 'replace'))
@@ -64,14 +65,14 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
     # Show TextWindow
     spinner.close()
     if not os.getenv("CI"):
-      error_s = "\n \n".join("\n".join(textwrap.wrap(e, 65)) for e in errors)
-      with TextWindow("openpilot failed to build\n \n" + error_s) as t:
+      error_s = "\n\n".join("\n".join(textwrap.wrap(e, 65)) for e in errors)
+      with TextWindow("openpilot failed to build\n\n" + error_s) as t:
         t.wait_for_exit()
     exit(1)
 
 
   # enforce max cache size
-  cache_files = [f for f in CACHE_DIR.rglob('*') if f.is_file()]
+  cache_files_unsorted = [f for f in CACHE_DIR.rglob('*') if f.is_file()]
   cache_files.sort(key=lambda f: f.stat().st_mtime)
   cache_size = sum(f.stat().st_size for f in cache_files)
   for f in cache_files:
@@ -84,5 +85,6 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
 if __name__ == "__main__" and not PREBUILT:
   spinner = Spinner()
   spinner.update_progress(0, 100)
-  build(spinner, is_dirty())
+  if PREBUILT:
+      build(spinner, is_dirty())
 
