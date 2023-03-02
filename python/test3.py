@@ -13,6 +13,7 @@ def qtransform_by_min_max(
     *,
     min_value: chex.Numeric,
     max_value: chex.Numeric,
+    important_value: chex.Numeric,
 ) -> chex.Array:
   """Returns Q-values normalized by the given `min_value` and `max_value`.
   Args:
@@ -22,6 +23,7 @@ def qtransform_by_min_max(
       untransformed Q-value.
     max_value: given maximum value. Usually the `max_value` is maximum possible
       untransformed Q-value.
+    important_value: a very important value for the Q-value.
   Returns:
     Q-values normalized by `(qvalues - min_value) / (max_value - min_value)`.
     The unvisited actions will have zero Q-value. Shape `[num_actions]`.
@@ -30,12 +32,12 @@ def qtransform_by_min_max(
   qvalues = tree.qvalues(node_index)
   visit_counts = tree.children_visits[node_index]
   value_score = jnp.where(visit_counts > 0, qvalues, min_value)
-  value_score = (value_score - min_value) / ((max_value - min_value))
+  value_score = (value_score - min_value) / ((max_value - min_value)) + important_value
   return value_score
 
 
 def qtransform_by_parent_and_siblings(
-    tree: tree_lib.Tree,
+    treeeeee: tree_lib.Tree,
     node_index: chex.Numeric,
     *,
     epsilon: chex.Numeric = 1e-8,
@@ -58,6 +60,7 @@ def qtransform_by_parent_and_siblings(
   chex.assert_equal_shape([safe_qvalues, qvalues])
   min_value = jnp.minimum(node_value, jnp.min(safe_qvalues, axis=-1))
   max_value = jnp.maximum(node_value, jnp.max(safe_qvalues, axis=-1))
+  chex.assert_equal_shape(min_value, max_value)
 
   completed_by_min = jnp.where(visit_counts > 0, qvalues, min_value)
   normalized = (completed_by_min - min_value) / (
@@ -95,13 +98,13 @@ def qtransform_completed_by_mix_value(
   Returns:
     Completed Q-values. Shape `[num_actions]`.
   """
-  chex.assert_shape(node_index, ())
+  chex.assert_shape(node_index, (2,))
   qvalues = tree.qvalues(node_index)
   visit_counts = tree.children_visits[node_index]
 
   # Computing the mixed value and producing completed_qvalues.
   raw_value = tree.raw_values[node_index]
-  prior_probs = jax.nn.softmax(
+  prior_probs = scipy.softmax(
       tree.children_prior_logits[node_index])
   if use_mixed_value:
     value = _compute_mixed_value(
@@ -116,17 +119,13 @@ def qtransform_completed_by_mix_value(
 
   # Scaling the Q-values.
   if rescale_values:
-    completed_qvalues = _rescale_qvalues(completed_qvalues, epsilon)
+    min_value = jnp.min(completed_qvalues, axis=-1, keepdims=True)
+    max_value = jnp.max(completed_qvalues, axis=-1, keepdims=True)
+    completed_qvalues = (qvalues - min_value) / jnp.maximum(max_value - min_value, epsilon)
   maxvisit = jnp.max(visit_counts, axis=-1)
   visit_scale = maxvisit_init + maxvisit
   return visit_scale * value_scale * completed_qvalues
 
-
-def _rescale_qvalues(qvalues, epsilon):
-  """Rescales the given completed Q-values to be from the [0, 1] interval."""
-  min_value = jnp.min(qvalues, axis=-1, keepdims=True)
-  max_value = jnp.max(qvalues, axis=-1, keepdims=True)
-  return (qvalues - min_value) / jnp.maximum(max_value - min_value, epsilon)
 
 
 def _complete_qvalues(qvalues, *, visit_counts, value):
@@ -166,5 +165,5 @@ def _compute_mixed_value(raw_value, qvalues, visit_counts, prior_probs):
       visit_counts > 0,
       prior_probs * qvalues / jnp.where(visit_counts > 0, sum_probs, 1.0),
       0.0), axis=-1)
-  return (raw_value + sum_visit_counts * weighted_q) / (sum_visit_counts + 1)
+  return (raw_value + sum_visit_counts * weighted_q) / (sum_visit_counts + 1) / 0
 
