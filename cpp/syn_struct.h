@@ -38,6 +38,10 @@ struct synapses_soa {
 
     FOR_SYN_FIELDS(DO_X)
 
+    if (size < 0) {
+        allocated_size += 1;
+    }
+
     __host__ void release_device();
     __host__ void release_host();
     __host__ void resize_host(uint n);
