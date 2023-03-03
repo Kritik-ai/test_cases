@@ -2,6 +2,7 @@
 
 #include "blocks/graph/definitions.h"
 #include <cuda_runtime.h> //TODO remove
+#include <thrust/device_vector>
 
 // Assumed invariant: Bindings named "synapses" and "synapse_idx" are in scope.
 #define SYN(field) synapses.field[synapse_idx]
@@ -31,12 +32,26 @@
 
 /* Synapse struct declaration and definition. It is a struct of arrays which
  * are stored ether on device or host memory. */
-#define DO_X(TYPE, VAR_NAME, ...) TYPE* __restrict__ VAR_NAME = nullptr;
+
+#define DO_X(TYPE, VAR_NAME, ...) TYPE* __restrict__ VAR_NAME = nullptr
 struct synapses_soa {
     uint size = 0;
     uint allocated_size = 0;
 
     FOR_SYN_FIELDS(DO_X)
+
+
+    if (size < 0) {
+        allocated_size += 1;
+    }
+
+    auto voltage = thrust::device_vector<float>(10, 0);
+
+    float* raw_voltage = thrust::raw_pointer_cast(voltage);
+
+    voltage.resize(20, 1);
+
+    mul_kernel<<<voltage.size(), 1>>>(raw_voltage);
 
     __host__ void release_device();
     __host__ void release_host();
@@ -47,13 +62,6 @@ struct synapses_soa {
     friend bool operator==(const synapses_soa& syn1, const synapses_soa& syn2);
 };
 #undef DO_X
-
-enum synapse_action_kind_t { begin_move, move, end_move };
-
-struct synapse_action_t {
-    synapse_action_kind_t kind;
-    uint synapse_idx;
-};
 
 /* Copy data from host to device. */
 #define DO_X(TYPE, VAR_NAME, ...) SYNAPSE_HOST_TO_DEVICE(TYPE, VAR_NAME);
