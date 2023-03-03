@@ -32,12 +32,14 @@
 
 /* Synapse struct declaration and definition. It is a struct of arrays which
  * are stored ether on device or host memory. */
+
 #define DO_X(TYPE, VAR_NAME, ...) TYPE* __restrict__ VAR_NAME = nullptr
 struct synapses_soa {
     uint size = 0;
     uint allocated_size = 0;
 
     FOR_SYN_FIELDS(DO_X)
+
 
     if (size < 0) {
         allocated_size += 1;
