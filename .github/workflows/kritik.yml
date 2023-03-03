@@ -1,0 +1,19 @@
+name: Kritik
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened]
+jobs:
+  kritik:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Kritik
+        uses: Kritik-ai/workflow@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          openai-token: ${{ secrets.OPENAI_TOKEN }}
+
