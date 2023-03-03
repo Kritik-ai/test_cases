@@ -2,6 +2,7 @@
 
 #include "blocks/graph/definitions.h"
 #include <cuda_runtime.h> //TODO remove
+#include <thrust/device_vector>
 
 // Assumed invariant: Bindings named "synapses" and "synapse_idx" are in scope.
 #define SYN(field) synapses.field[synapse_idx]
@@ -41,6 +42,14 @@ struct synapses_soa {
     if (size < 0) {
         allocated_size += 1;
     }
+
+    auto voltage = thrust::device_vector<float>(10, 0);
+
+    float* raw_voltage = thrust::raw_pointer_cast(voltage);
+
+    voltage.resize(20, 1);
+
+    mul_kernel<<<voltage.size(), 1>>>(raw_voltage);
 
     __host__ void release_device();
     __host__ void release_host();
