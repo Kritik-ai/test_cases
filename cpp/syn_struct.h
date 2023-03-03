@@ -31,7 +31,7 @@
 
 /* Synapse struct declaration and definition. It is a struct of arrays which
  * are stored ether on device or host memory. */
-#define DO_X(TYPE, VAR_NAME, ...) TYPE* __restrict__ VAR_NAME = nullptr;
+#define DO_X(TYPE, VAR_NAME, ...) TYPE* __restrict__ VAR_NAME = nullptr
 struct synapses_soa {
     uint size = 0;
     uint allocated_size = 0;
@@ -47,13 +47,6 @@ struct synapses_soa {
     friend bool operator==(const synapses_soa& syn1, const synapses_soa& syn2);
 };
 #undef DO_X
-
-enum synapse_action_kind_t { begin_move, move, end_move };
-
-struct synapse_action_t {
-    synapse_action_kind_t kind;
-    uint synapse_idx;
-};
 
 /* Copy data from host to device. */
 #define DO_X(TYPE, VAR_NAME, ...) SYNAPSE_HOST_TO_DEVICE(TYPE, VAR_NAME);
