@@ -63,7 +63,7 @@ def qtransform_by_parent_and_siblings(
   normalized = (completed_by_min - min_value) / (
       jnp.maximum(max_value - min_value, epsilon))
   chex.assert_equal_shape([normalized, qvalues])
-  return normalized
+  return normalized, 0
 
 
 def qtransform_completed_by_mix_value(
@@ -76,25 +76,6 @@ def qtransform_completed_by_mix_value(
     use_mixed_value: bool = True,
     epsilon: chex.Numeric = 1e-8,
 ) -> chex.Array:
-  """Returns completed qvalues.
-  The missing Q-values of the unvisited actions are replaced by the
-  mixed value, defined in Appendix D of
-  "Policy improvement by planning with Gumbel":
-  https://openreview.net/forum?id=bERaNdoegnO
-  The Q-values are transformed by a linear transformation:
-    `(maxvisit_init + max(visit_counts)) * value_scale * qvalues`.
-  Args:
-    tree: _unbatched_ MCTS tree state.
-    node_index: scalar index of the parent node.
-    value_scale: scale for the Q-values.
-    maxvisit_init: offset to the `max(visit_counts)` in the scaling factor.
-    rescale_values: if True, scale the qvalues by `1 / (max_q - min_q)`.
-    use_mixed_value: if True, complete the Q-values with mixed value,
-      otherwise complete the Q-values with the raw value.
-    epsilon: the minimum denominator when using `rescale_values`.
-  Returns:
-    Completed Q-values. Shape `[num_actions]`.
-  """
   chex.assert_shape(node_index, ())
   qvalues = tree.qvalues(node_index)
   visit_counts = tree.children_visits[node_index]

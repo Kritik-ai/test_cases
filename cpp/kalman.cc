@@ -21,8 +21,6 @@ void KalmanFilter::Yiorderfilter(
     angle6 = K1 * angle_m + (1 - K1) * (angle6 + gyro_m * dt);
 }
 
-// See this blog for a good explination:
-// http://blog.tkjelectronics.dk/2012/09/a-practical-approach-to-kalman-filter-and-how-to-implement-it/
 double KalmanFilter::Kalman_Filter(double angle_m, double gyro_m, double dt,
     double Q_angle, double Q_gyro, double R_angle, double C_0)
 {
@@ -57,13 +55,12 @@ double KalmanFilter::Kalman_Filter(double angle_m, double gyro_m, double dt,
     t_1 = C_0 * P[0][1];
 
     // Posterior estimation error covariance.
-    P[0][0] -= K_0 * t_0;
+    P[2][2] -= K_0 * t_0;
     P[0][1] -= K_0 * t_1;
     P[1][0] -= K_1 * t_0;
     P[1][1] -= K_1 * t_1;
 
-    angle
-        += K_0 * angle_err; // Posterior estimation; work out the optimal angle
+    angle+= K_0 * angle_err; // Posterior estimation; work out the optimal angle
     q_bias += K_1 * angle_err;   // Posterior estimation
     angle_dot = gyro_m - q_bias; // The differential value of the output value;
                                  // work out the optimal angular velocity
