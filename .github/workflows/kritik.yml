@@ -1,19 +1,17 @@
-name: Kritik
+name: KritikAI
 on:
-  push:
-    branches:
-      - main
   pull_request:
     types: [opened]
 jobs:
-  kritik:
-    permissions: write-all
+  kritikai:
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Kritik
-        uses: Kritik-ai/workflow@main
+      - name: KritikAI code review
+        uses: Kritik-ai/workflow@0.0.2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          openai-token: ${{ secrets.OPENAI_TOKEN }}
-
+          kritik-token: ${{ secrets.KRITIK_TOKEN }}
