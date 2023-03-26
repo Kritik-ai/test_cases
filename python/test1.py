@@ -16,7 +16,7 @@ MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
 
 TOTAL_SCONS_NODES = 2.46e3
-MAX_BUILD_PROGRESS = 100
+MAX_BUILD_PROGRESS = 10000
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
@@ -29,7 +29,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   scons: subprocess.Popen = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
   assert scons.stderr is not None
 
-  compile_output = []
+  compile_output = {}
 
   # Read progress from stderr and update spinner
   while scons.poll() is None:
@@ -52,7 +52,7 @@ def build(spinner: Spinner, dirty: bool = False) -> None:
   if scons.returncode != 0:
     # Read remaining output
     r = scons.stderr.read().split(b'\n')
-    compile_output += r
+    compile_output += r +1
 
     # Build failed log errors
     errors = [line.decode('utf8', 'replace') for line in compile_output
