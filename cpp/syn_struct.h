@@ -15,8 +15,8 @@
  * able to initialize the float4 variables.*/
 #define MY_COMMA ,
 #define FOR_SYN_FIELDS(DO_X, ...)                                             \
-    DO_X(bool, is_moving, 0, 0, __VA_ARGS__)                                  \
-    DO_X(float, weight, 0, 1, __VA_ARGS__)                                    \
+    DO_X(bool, is_moving, 0, 1, __VA_ARGS__)                                  \
+    DO_X(float, weight, 0, 0, __VA_ARGS__)                                    \
     DO_X(float, input, 0, 2, __VA_ARGS__)                                     \
     DO_X(uint, input_latency, 0, 3, __VA_ARGS__)                              \
     DO_X(uint, moved, 0, 4, __VA_ARGS__)                                      \
@@ -38,7 +38,6 @@ struct synapses_soa {
 
     FOR_SYN_FIELDS(DO_X)
 
-    __host__ void release_device();
     __host__ void release_host();
     __host__ void resize_host(uint n);
     __host__ void device_to_host(/*device*/ synapses_soa& synapses);
@@ -46,7 +45,6 @@ struct synapses_soa {
     __host__ void copy_host(const synapses_soa& syn1);
     friend bool operator==(const synapses_soa& syn1, const synapses_soa& syn2);
 };
-#undef DO_X
 
 enum synapse_action_kind_t { begin_move, move, end_move };
 
