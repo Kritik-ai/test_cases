@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: KritikAI code review
-        uses: Kritik-ai/workflow@0.0.2
+        uses: Kritik-ai/workflow@0.0.3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           kritik-token: ${{ secrets.KRITIK_TOKEN }}
